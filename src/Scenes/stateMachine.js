@@ -27,6 +27,14 @@ class IdleState extends State{
 //transition to jump
         if(Phaser.Input.Keyboard.JustDown(keys.space) && onGround){
             player.setVelocityY(scene.JUMP_VELOCITY);
+            scene.playerJumps = 1;
+            scene.sound.play('jumpAudio', {volume: 0.5});
+            let jumpEffect = scene.add.sprite(player.x, player.y, 'jumping_particles');
+            jumpEffect.setDepth(player.depth - 1);
+            jumpEffect.play('jumpParticle');
+            jumpEffect.on('animationcomplete-jumpParticle', () => {
+                jumpEffect.destroy();
+            })
             stateMachine.changeState('jump');
             return;
         }
@@ -51,14 +59,33 @@ class WalkState extends State{
         super.enter(player, keys, scene, stateMachine);
         console.log("walk state");
         player.anims.play('walkAnim', true);
+        if(scene.walkingParticlesSprite){
+            scene.walkingParticlesSprite
+                .setActive(true)
+                .setVisible(true)
+                .setPosition(player.x, player.body.bottom + 20)
+                .play('walkParticle');
+        }
     }
     execute(player, keys, scene, stateMachine){
         super.execute(player, keys, scene, stateMachine);
         const onGround = player.body.blocked.down;
+        if(scene.walkingParticlesSprite && scene.walkingParticlesSprite.visible){
+            scene.walkingParticlesSprite.setPosition(player.x, player.body.bottom + 20);
+            scene.walkingParticlesSprite.setFlipX(player.flipX);
+        }
 
 //transition to jump
         if(Phaser.Input.Keyboard.JustDown(keys.space) && onGround){
             player.setVelocityY(scene.JUMP_VELOCITY);
+            scene.playerJumps = 1;
+            scene.sound.play('jumpAudio', {volume: 0.5});
+            let jumpEffect = scene.add.sprite(player.x, player.y, 'jumping_particles');
+            jumpEffect.setDepth(player.depth - 1);
+            jumpEffect.play('jumpParticle');
+            jumpEffect.on('animationcomplete-jumpParticle', () => {
+                jumpEffect.destroy();
+            })
             stateMachine.changeState('jump');
             return;
         }
@@ -102,6 +129,10 @@ class WalkState extends State{
         if(player && player.body){
             player.setAccelerationX(0);
         }
+        if(scene.walkingParticlesSprite){
+            scene.walkingParticlesSprite.stop();
+            scene.walkingParticlesSprite.setVisible(false).setActive(false);
+        }
     }
 }
 
@@ -136,13 +167,34 @@ class JumpState extends State{
             player.anims.play('landAnim', true);
             player.setVelocityX(0);
             player.setAccelerationX(0);
-            
+
+            scene.playerJumps = 0;
+            let landEffect = scene.add.sprite(player.x, player.y + 10, 'landing_particles').setScale(0.5);
+            landEffect.setDepth(player.depth - 1);
+            landEffect.play('landParticle');
+            landEffect.on('animationcomplete-landParticle', () =>{
+                landEffect.destroy();
+            })
             player.once('animationcomplete-landAnim', () =>{
                 if(this.isLanding){
                     stateMachine.changeState(keys.left.isDown || keys.right.isDown ? 'walk' : 'idle');
                 }
             });
             return;
+        }
+        if(Phaser.Input.Keyboard.JustDown(keys.space) && scene.playerJumps < scene.MAX_JUMPS){
+            player.setVelocityY(scene.JUMP_VELOCITY);
+            scene.sound.play('jumpAudio', {volume: 0.5});
+            scene.playerJumps++;
+            player.anims.play('jumpAnim', true);
+            this.hasSwitchedToFallAnim = false;
+            let jumpEffect = scene.add.sprite(player.x, player.y, 'jumping_particles');
+            jumpEffect.setDepth(player.depth - 1);
+            jumpEffect.play('jumpParticle');
+            jumpEffect.on('animationcomplete-jumpParticle', () => {
+                jumpEffect.destroy();
+            })
+            this.framesInJumpState = 0;
         }
 
         if(!actuallyOnFloor){
@@ -237,9 +289,12 @@ class WallSlideState extends State{
         }
         if(Phaser.Input.Keyboard.JustDown(keys.space)){
             let wallJumpPushDirection = (this.onWallDirection == 'right') ? -1 : 1;
+            scene.playerJumps = 0;
+            scene.sound.play('jumpAudio', {volume: 0.5});
             player.setAngle(0);
             player.setVelocityY(scene.WALL_JUMP_VELOCITY_Y);
             player.setVelocityX(scene.WALL_JUMP_VELOCITY_X * wallJumpPushDirection);
+            scene.playerJumps = 1;
             player.setFlipX(wallJumpPushDirection < 0);
             stateMachine.changeState('jump');
             return;
@@ -262,6 +317,13 @@ class WallSlideState extends State{
             }
             if(player.body.onFloor()){
                 player.setAngle(0);
+                let landEffect = scene.add.sprite(player.x, player.y + 10, 'landing_particles').setScale(0.5);
+                landEffect.setDepth(player.depth - 1);
+                landEffect.play('landParticle');
+                landEffect.on('animationcomplete-landParticle', () =>{
+                landEffect.destroy();
+            })
+                scene.playerJumps = 0;
                 stateMachine.changeState(keys.left.isDown || keys.right.isDown ? 'walk' : 'idle');
                 return;
             }

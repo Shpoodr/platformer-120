@@ -4,9 +4,19 @@ class Load extends Phaser.Scene{
     }
     preload(){
         this.load.setPath("./assets/");
+        //loading background
         //loaded tile map from tiled 
         this.load.image('tileSheet', 'TX Tileset Ground.png');
+        this.load.spritesheet('coinSheet', 'tilemap_packed.png', {
+            frameWidth: 18,
+            frameHeight: 18
+        });
         this.load.tilemapTiledJSON('tileMapKey','forest-Ground.json');
+//audio loading
+        this.load.audio('bg_music', 'soundEffects/jungle-ish-beat-for-video-games-314073.mp3');
+        this.load.audio('jumpAudio', 'soundEffects/jump.wav');
+        this.load.audio('coinAudio', 'soundEffects/coin.wav');
+
 //idle
         this.load.spritesheet('characterIdleSheet', 'player_animations/SLIME PLATFORMER_STRIP_Idle.png', {
             frameWidth: 64,
@@ -32,6 +42,28 @@ class Load extends Phaser.Scene{
             frameWidth: 64,
             frameHeight: 64
         });
+//Start Loading particles
+//walking particle
+        this.load.spritesheet('walking_particles', 'particles/SmokeFX Lite SpriteSheet 2A-1.png', {
+            frameWidth: 64,
+            frameHeight: 64
+        });
+//jumping particles
+        this.load.spritesheet('jumping_particles', 'particles/SmokeFX Lite SpriteSheet 3A-5.png', {
+            frameWidth: 64,
+            frameHeight: 64
+        });
+//landing Particles
+        this.load.spritesheet('landing_particles', 'particles/SmokeFX Lite SpriteSheet 4A-1.png', {
+            frameWidth: 252,
+            frameHeight: 61
+        });
+/*coin sprite
+        this.load.spritesheet('coin_sprite', 'tilemap_packed.png', {
+            frameWidth: 18,
+            frameHeight: 18
+        });
+*/
     }
     create(){
 //idle animation creation
@@ -82,6 +114,27 @@ class Load extends Phaser.Scene{
         frames: this.anims.generateFrameNumbers('characterCrouchSheet', {start: 0, end: 7}),
         frameRate: 10,
         repeat: -1
+    });
+//walking Particles anim
+    this.anims.create({
+        key: 'walkParticle',
+        frames: this.anims.generateFrameNumbers('walking_particles', {start: 0, end: 5}),
+        frameRate: 10,
+        repeat: -1
+    });
+//jumping Particle anim
+    this.anims.create({
+        key: 'jumpParticle',
+        frames: this.anims.generateFrameNumbers('jumping_particles', {start: 0, end: 5}),
+        frameRate: 15,
+        repeat: 0
+    });
+//landing particle anim
+    this.anims.create({
+        key: 'landParticle',
+        frames: this.anims.generateFrameNumbers('landing_particles', {start: 4, end: 10}),
+        frameRate: 30,
+        repeat: 0
     });
         this.scene.start('platformerScene');
     }
