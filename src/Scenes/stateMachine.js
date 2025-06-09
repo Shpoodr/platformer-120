@@ -336,6 +336,54 @@ class WallSlideState extends State{
     }
 }
 
+class PlayerHitState extends State{
+    constructor(){
+        super("hit");
+        this.knockbackDuration = 300;
+        this.invincibilityDuration = 1500;
+    }
+    enter(player, keys, scene, stateMachine, data){
+        super.enter(player, keys, scene, stateMachine, data);
+        player.anims.play('player_hurt_anim', true);
+
+        const knockbackPowerX = 200;
+        const knockbackPowerY = -300;
+        let knockbackDirection = 1;
+
+        if(data && data.from && data.from.x > player.x){
+            knockbackDirection = -1
+        }
+
+        player.setVelocity(knockbackPowerX * knockbackDirection, knockbackPowerY);
+        player.setAccelerationX(0);
+
+        player.isInvincible = true;
+        scene.tweens.add({
+            targets: player,
+            alpha: 0.5,
+            duration: 100,
+            repeat: Math.floor(this.invincibilityDuration / 100),
+            yoyo: true,
+            onComplete: () =>{
+                player.setAlpha(1);
+            }
+        });
+        scene.time.delayedCall(this.knockbackDuration, () =>{
+            if(stateMachine.currentState == this){
+                stateMachine.changeState('jump');
+            }
+        });
+        scene.time.delayedCall(this.invincibilityDuration, () => {
+            if(scene){
+                player.isInvincible = false;
+            }
+        });
+    }
+    execute(){
+
+    }
+}
+
 class PlayerStateMachine{
     constructor(player, scene){
         this.player = player;
@@ -345,24 +393,20 @@ class PlayerStateMachine{
             walk: new WalkState(),
             jump: new JumpState(),
             dash: new DashState(),
-            wallSlide: new WallSlideState()
+            wallSlide: new WallSlideState(),
+            hit: new PlayerHitState()
         };
     }
     initialize(initialState){
         this.currentState = initialState;
         if(this.currentState && this.currentState.enter){
-            this.currentState.enter(this.player, this)
+            this.currentState.enter(this.player, this.scene.keys, this.scene, this, {});
         }
 
     }
-    changeState(newStateKey){
+    changeState(newStateKey, data = {}){
         const newState = this.states[newStateKey];
-        if(!newState) { 
-            console.error('playerStateMachine: State Key "${newStateKey}" not found in states object.');
-            return;
-        }
-        if(this.currentState == newState) {
-            console.log("Already in that state.");
+        if(!newState || this.currentState == newState) { 
             return;
         }
         if(this.currentState && this.currentState.exit){
@@ -370,7 +414,7 @@ class PlayerStateMachine{
         }
         this.currentState = newState;
         if(this.currentState && this.currentState.enter){
-            this.currentState.enter(this.player, this.scene.keys, this.scene, this);
+            this.currentState.enter(this.player, this.scene.keys, this.scene, this, data);
         }
     }
     update(inputs){

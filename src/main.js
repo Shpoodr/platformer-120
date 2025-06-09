@@ -30,8 +30,13 @@ let config = {
     },
     width: 1440,
     height: 900,
-    scene: [Load, Platformer]
+    scene: [Load, Platformer],
+    fps: {
+        target: 60,
+        forceSetTimeOut: true
+    }
 }
+
 
 var cursors;
 const SCALE = 2.0;
